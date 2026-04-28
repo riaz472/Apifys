@@ -1,54 +1,41 @@
 from apify import Actor
 from playwright.async_api import async_playwright
 import asyncio
-import random
 
 async def main():
     async with Actor:
-        # Aapka link aur keyword
         url = "https://abr.ge/zz4y46"
-        keyword = "riazinvest" # Asli lagne ke liye search keyword
-
-        Actor.log.info("Bot starting... using GitHub source for reliability.")
+        Actor.log.info("Starting bot in safe mode...")
 
         async with async_playwright() as p:
-            # Har baar fresh browser instance (Cookies/Cache auto-clear)
-            browser = await p.chromium.launch(headless=True)
+            # Extra arguments for Apify/Docker environment
+            browser = await p.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+            )
             
-            # Mobile View Simulation (S901B model)
             context = await browser.new_context(
-                user_agent="Mozilla/5.0 (Linux; Android 13; SM-S901B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile",
-                viewport={'width': 390, 'height': 844}
+                user_agent="Mozilla/5.0 (Linux; Android 13) Chrome/122.0.0.0 Mobile"
             )
             page = await context.new_page()
 
             try:
-                # STEP 1: Google Search bypass (Traffic Quality high karne ke liye)
-                Actor.log.info("Bypassing via Google Search...")
-                await page.goto("https://www.google.com")
-                await page.wait_for_timeout(2000)
+                Actor.log.info(f"Opening URL: {url}")
+                # Timeout barha diya hai taaki slow loading par error na aaye
+                await page.goto(url, wait_until="domcontentloaded", timeout=90000)
                 
-                # STEP 2: Target Link par jana
-                Actor.log.info(f"Navigating to: {url}")
-                await page.goto(url, wait_until="networkidle", timeout=60000)
+                Actor.log.info("Page loaded! Performing human-like actions...")
+                await asyncio.sleep(5)
                 
-                # STEP 3: HUMAN-LIKE CLICKS (Ads trigger karne ke liye)
-                # Yeh page par 3 alag-alag random spots par click karega
-                for i in range(3):
-                    x = random.randint(50, 350)
-                    y = random.randint(150, 600)
-                    await page.mouse.click(x, y)
-                    Actor.log.info(f"Click {i+1} performed at {x}, {y}")
-                    await asyncio.sleep(random.randint(2, 5))
-
-                # STEP 4: STAY TIME (Wait taaki click register ho)
-                # 50 seconds ka stay taaki ad revenue count ho
-                Actor.log.info("Staying for 50 seconds to ensure ad load...")
+                # Screen ke beech mein click
+                await page.mouse.click(200, 400)
+                
+                Actor.log.info("Waiting 50 seconds for ad registration...")
                 await asyncio.sleep(50)
                 
-                Actor.log.info("Mission Successful: Click & View Registered!")
+                Actor.log.info("Mission Successful!")
 
             except Exception as e:
-                Actor.log.error(f"Something went wrong: {e}")
+                Actor.log.error(f"Error occurred: {e}")
             finally:
                 await browser.close()
