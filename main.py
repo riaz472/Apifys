@@ -1,41 +1,30 @@
+import requests
+import time
 from apify import Actor
-from playwright.async_api import async_playwright
-import asyncio
 
-async def main():
-    async with Actor:
+def main():
+    with Actor:
         url = "https://abr.ge/zz4y46"
-        Actor.log.info("Starting bot in safe mode...")
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
 
-        async with async_playwright() as p:
-            # Extra arguments for Apify/Docker environment
-            browser = await p.chromium.launch(
-                headless=True,
-                args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
-            )
+        Actor.log.info(f"Bot starting... Targeting: {url}")
+
+        try:
+            # Link ko hit karna
+            response = requests.get(url, headers=headers, timeout=30)
             
-            context = await browser.new_context(
-                user_agent="Mozilla/5.0 (Linux; Android 13) Chrome/122.0.0.0 Mobile"
-            )
-            page = await context.new_page()
+            if response.status_code == 200:
+                Actor.log.info("Link hit successful! Status 200.")
+                Actor.log.info("Waiting 60 seconds to simulate human view...")
+                time.sleep(60) # Clicks aur views count hone ka time
+                Actor.log.info("Mission Successful! View registered.")
+            else:
+                Actor.log.error(f"Failed to load. Status code: {response.status_code}")
 
-            try:
-                Actor.log.info(f"Opening URL: {url}")
-                # Timeout barha diya hai taaki slow loading par error na aaye
-                await page.goto(url, wait_until="domcontentloaded", timeout=90000)
-                
-                Actor.log.info("Page loaded! Performing human-like actions...")
-                await asyncio.sleep(5)
-                
-                # Screen ke beech mein click
-                await page.mouse.click(200, 400)
-                
-                Actor.log.info("Waiting 50 seconds for ad registration...")
-                await asyncio.sleep(50)
-                
-                Actor.log.info("Mission Successful!")
+        except Exception as e:
+            Actor.log.error(f"Error occurred: {str(e)}")
 
-            except Exception as e:
-                Actor.log.error(f"Error occurred: {e}")
-            finally:
-                await browser.close()
+if __name__ == "__main__":
+    main()
