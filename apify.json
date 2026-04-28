@@ -1,5 +1,5 @@
 {
-    "name": "my-actor",
+    "name": "apifys-bot",
     "version": "0.0",
     "buildTag": "latest",
     "dockerfile": "Dockerfile"
