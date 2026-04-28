@@ -3,35 +3,32 @@ from playwright.async_api import async_playwright
 
 async def main():
     async with Actor:
-        # Aapka target link
         url = "https://abr.ge/zz4y46"
-        
-        Actor.log.info(f"Bot shuru ho raha hai... Target: {url}")
+        Actor.log.info("Starting Fast-Mode Bot...")
 
         async with async_playwright() as p:
-            # Browser configuration
-            browser = await p.chromium.launch(headless=True)
-            context = await browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-            )
+            # Memory bachane ke liye extra arguments
+            browser = await p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"])
+            context = await browser.new_context(viewport={'width': 375, 'height': 667}) # Mobile size (kam RAM khata hai)
             page = await context.new_page()
 
             try:
-                Actor.log.info("Page khul raha hai...")
-                await page.goto(url, wait_until="networkidle", timeout=60000)
+                # Page load hone ka wait (sirf 30s timeout)
+                Actor.log.info(f"Navigating to: {url}")
+                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
                 
-                Actor.log.info("Page load ho gaya. 5 seconds wait...")
+                # 5 second ka wait ads load hone ke liye
                 await page.wait_for_timeout(5000)
 
-                # Screen ke darmiyan click (Ad trigger karne ke liye)
-                Actor.log.info("Click perform kar rahe hain...")
-                await page.mouse.click(250, 400) 
+                # Pakka Click (Center of screen)
+                Actor.log.info("Performing click...")
+                await page.mouse.click(180, 330)
 
-                # 50 seconds stay taaki view count ho
-                Actor.log.info("Wait kar rahe hain (50s) view register karne ke liye...")
-                await page.wait_for_timeout(50000)
+                # Sirf 25-30 second mazeed rukna hai
+                Actor.log.info("Staying for 25s...")
+                await page.wait_for_timeout(25000)
 
-                Actor.log.info("Mission Successful! View register ho chuka hoga.")
+                Actor.log.info("Done! Closing to save resources.")
 
             except Exception as e:
                 Actor.log.error(f"Error: {str(e)}")
@@ -40,4 +37,4 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main())
+    asyncio.run(main()
