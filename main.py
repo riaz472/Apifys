@@ -1,43 +1,37 @@
-from apify import Actor
-from playwright.async_api import async_playwright
-import asyncio
+name: Premium Ad Clicker Runner
 
-async def run_bot(browser_type):
-    url = "https://abr.ge/zz4y46"
-    # Yahan 'await' ka izafa kiya gaya hai jo error khatam kar dega
-    browser = await browser_type.launch(headless=True, args=["--no-sandbox"])
-    
-    try:
-        context = await browser.new_context(viewport={'width': 375, 'height': 667})
-        page = await context.new_page()
-        
-        Actor.log.info(f"Visiting: {url}")
-        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        await asyncio.sleep(5) 
-        
-        Actor.log.info("Clicking Ad area...")
-        await page.mouse.click(180, 330)
-        
-        Actor.log.info("Staying for 30s...")
-        await asyncio.sleep(30)
-        Actor.log.info("Cycle complete.")
-        
-    except Exception as e:
-        Actor.log.error(f"Error in cycle: {e}")
-    finally:
-        await browser.close()
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */3 * * *'
 
-async def main():
-    async with Actor:
-        Actor.log.info("=== INFINITE LOOP STARTED ===")
-        async with async_playwright() as p:
-            while True:
-                # Har cycle ke baad browser band ho kar naya khulega
-                await run_bot(p.chromium)
-                
-                Actor.log.info("Waiting 10s before next cycle...")
-                await asyncio.sleep(10)
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          # Chrome aur dependencies install karne ka behtar tareeka
+          sudo apt-get install -y xvfb x11-utils google-chrome-stable || true
+          # Package name fix for Ubuntu 24.04 (libasound2 vs libasound2t64)
+          sudo apt-get install -y libnss3 libatk-bridge2.0-0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libasound2t64 || sudo apt-get install -y libasound2 || true
+
+      - name: Install Python Requirements
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Bot with Virtual Display
+        env:
+          GITHUB_ACTIONS: "true"
+        run: |
+          xvfb-run --server-args="-screen 0 1920x1080x24" python ad_clicker.py --query "https://abr.ge/zz4y46"
